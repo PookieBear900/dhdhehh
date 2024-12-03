@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bird</title>
+<style>
+body {
+margin: 0;
+overflow: hidden;
+font-family: Arial, sans-serif;
+}
+canvas {
+display: block;
+margin: 0 auto;
+background-color: #70c5ce;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Set canvas dimensions
+canvas.width = 800;
+canvas.height = 400;
+
+// Variables
+let bird = { x: 100, y: 200, size: 20, gravity: 0.5, velocity: 0, jump: -8 };
+let pipes = [];
+let pipeWidth = 60;
+let pipeGap = 120;
+let pipeSpeed = 2;
+let score = 0;
+let gameOver = false;
+
+// Key controls
+document.addEventListener('keydown', () => {
+bird.velocity = bird.jump;
+});
+
+// Create pipes
+function createPipes() {
+if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+const topPipeHeight = Math.random() * (canvas.height - pipeGap - 50);
+pipes.push({
+x: canvas.width,
+top: topPipeHeight,
+bottom: topPipeHeight + pipeGap,
+});
+}
+}
+
+// Draw bird
+function drawBird() {
+ctx.fillStyle = 'yellow';
+ctx.fillRect(bird.x, bird.y, bird.size, bird.size);
+}
+
+// Draw pipes
+function drawPipes() {
+ctx.fillStyle = 'green';
+pipes.forEach(pipe => {
+ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+});
+}
+
+// Update game
+function update() {
+if (gameOver) return;
+
+// Update bird position
+bird.velocity += bird.gravity;
+bird.y += bird.velocity;
+
+// Prevent bird from going out of bounds
+if (bird.y + bird.size > canvas.height || bird.y < 0) {
+gameOver = true;
+}
+
+// Update pipes
+pipes.forEach(pipe => {
+pipe.x -= pipeSpeed;
+
+// Check for collisions
+if (
+bird.x < pipe.x + pipeWidth &&
+bird.x + bird.size > pipe.x &&
+(bird.y < pipe.top || bird.y + bird.size > pipe.bottom)
+) {
+gameOver = true;
+}
+});
+
+// Remove off-screen pipes
+pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+
+// Update score
+pipes.forEach(pipe => {
+if (pipe.x + pipeWidth === bird.x) {
+score++;
+}
+});
+
+createPipes();
+}
+
+// Draw game
+function draw() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+// Draw background
+ctx.fillStyle = '#70c5ce';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Draw bird and pipes
+drawBird();
+drawPipes();
+
+// Draw score
+ctx.fillStyle = 'black';
+ctx.font = '20px Arial';
+ctx.fillText(`Score: ${score}`, 10, 30);
+
+// Game Over text
+if (gameOver) {
+ctx.fillStyle = 'red';
+ctx.font = '40px Arial';
+ctx.fillText('Game Over', canvas.width / 2 - 100, canvas.height / 2);
+}
+}
+
+// Game loop
+function loop() {
+update();
+draw();
+if (!gameOver) requestAnimationFrame(loop);
+}
+
+// Start the game
+loop();
+</script>
+</body>
+</html>

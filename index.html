@@ -1,171 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flappy Bird</title>
-<style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-}
-canvas {
-  display: block;
-  background-color: #70c5ce;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copy the Tune Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .button {
+            padding: 20px;
+            margin: 10px;
+            font-size: 20px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    <h1>Copy the Tune Game</h1>
+    <p>Watch and listen to the tune, then try to copy it by clicking the buttons below!</p>
 
-// Resize the canvas to fill the window
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+    <div>
+        <button id="C" class="button">C</button>
+        <button id="D" class="button">D</button>
+        <button id="E" class="button">E</button>
+        <button id="F" class="button">F</button>
+        <button id="G" class="button">G</button>
+        <button id="A" class="button">A</button>
+        <button id="B" class="button">B</button>
+    </div>
 
-// Variables
-let bird, pipes, pipeGap, pipeWidth, pipeSpeed, score, gameOver;
+    <p id="message"></p>
+    <p>Your score: <span id="score">0</span></p>
 
-function initializeGame() {
-  bird = { 
-    x: canvas.width / 6, 
-    y: canvas.height / 2, 
-    size: canvas.height / 20, // Scaled to fit the viewport
-    gravity: 0.5, 
-    velocity: 0, 
-    jump: -(canvas.height / 100) // Scaled jump strength
-  };
-  pipes = [];
-  pipeGap = canvas.height / 4; // Scaled gap
-  pipeWidth = canvas.width / 15; // Scaled pipe width
-  pipeSpeed = canvas.width / 300; // Scaled pipe speed
-  score = 0;
-  gameOver = false;
-}
+    <script>
+        // Audio context for generating sounds
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-initializeGame();
+        // Define note frequencies (in Hz)
+        const notes = {
+            'C': 261.63,
+            'D': 293.66,
+            'E': 329.63,
+            'F': 349.23,
+            'G': 392.00,
+            'A': 440.00,
+            'B': 493.88
+        };
 
-// Key controls
-document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') {
-    bird.velocity = bird.jump;
-  } else if (e.code === 'Enter' && gameOver) {
-    initializeGame();
-    loop();
-  }
-});
+        let tune = [];  // The random tune
+        let userInput = [];  // The player's input
+        let score = 0;  // Player's score
 
-// Create pipes
-function createPipes() {
-  if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - canvas.width / 4) {
-    const topPipeHeight = Math.random() * (canvas.height - pipeGap - 50);
-    pipes.push({
-      x: canvas.width,
-      top: topPipeHeight,
-      bottom: topPipeHeight + pipeGap,
-    });
-  }
-}
+        // Function to play a sound for a given note
+        function playNote(note) {
+            const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';  // Type of wave
+            oscillator.frequency.setValueAtTime(notes[note], audioContext.currentTime);
+            oscillator.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);  // Play for 0.5 seconds
+        }
 
-// Draw bird
-function drawBird() {
-  ctx.fillStyle = 'yellow';
-  ctx.fillRect(bird.x, bird.y, bird.size, bird.size);
-}
+        // Function to generate a random tune
+        function generateTune(length) {
+            return Array.from({ length }, () => {
+                const noteKeys = Object.keys(notes);
+                return noteKeys[Math.floor(Math.random() * noteKeys.length)];
+            });
+        }
 
-// Draw pipes
-function drawPipes() {
-  ctx.fillStyle = 'green';
-  pipes.forEach(pipe => {
-    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-    ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-  });
-}
+        // Function to play the tune
+        function playTune(tune) {
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < tune.length) {
+                    playNote(tune[i]);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    document.getElementById('message').textContent = 'Now it\'s your turn!';
+                }
+            }, 700);  // Delay between notes
+        }
 
-// Update game
-function update() {
-  if (gameOver) return;
+        // Start a new round of the game
+        function startGame() {
+            tune = generateTune(3);  // Generate a tune with 3 notes
+            userInput = [];  // Reset user input
+            document.getElementById('message').textContent = 'Watch and listen to the tune!';
+            playTune(tune);
+        }
 
-  // Update bird position
-  bird.velocity += bird.gravity;
-  bird.y += bird.velocity;
+        // Event listeners for the buttons
+        document.getElementById('C').addEventListener('click', () => handleUserInput('C'));
+        document.getElementById('D').addEventListener('click', () => handleUserInput('D'));
+        document.getElementById('E').addEventListener('click', () => handleUserInput('E'));
+        document.getElementById('F').addEventListener('click', () => handleUserInput('F'));
+        document.getElementById('G').addEventListener('click', () => handleUserInput('G'));
+        document.getElementById('A').addEventListener('click', () => handleUserInput('A'));
+        document.getElementById('B').addEventListener('click', () => handleUserInput('B'));
 
-  // Prevent bird from going out of bounds
-  if (bird.y + bird.size > canvas.height || bird.y < 0) {
-    gameOver = true;
-  }
+        // Handle the player's input
+        function handleUserInput(note) {
+            if (userInput.length < tune.length) {
+                userInput.push(note);
+                playNote(note);  // Play the note the user clicked
 
-  // Update pipes
-  pipes.forEach(pipe => {
-    pipe.x -= pipeSpeed;
+                // Check if the input is correct
+                if (userInput.length === tune.length) {
+                    if (userInput.join('') === tune.join('')) {
+                        score++;
+                        document.getElementById('message').textContent = 'You did it! You matched the tune!';
+                    } else {
+                        document.getElementById('message').textContent = 'Oops! The tune was different. Try again.';
+                    }
+                    document.getElementById('score').textContent = score;
+                    setTimeout(startGame, 1000);  // Start a new round after 1 second
+                }
+            }
+        }
 
-    // Check for collisions
-    if (
-      bird.x < pipe.x + pipeWidth &&
-      bird.x + bird.size > pipe.x &&
-      (bird.y < pipe.top || bird.y + bird.size > pipe.bottom)
-    ) {
-      gameOver = true;
-    }
-  });
+        // Start the game when the page loads
+        window.onload = startGame;
+    </script>
 
-  // Remove off-screen pipes
-  pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
-
-  // Update score
-  pipes.forEach(pipe => {
-    if (pipe.x + pipeWidth === bird.x) {
-      score++;
-    }
-  });
-
-  createPipes();
-}
-
-// Draw game
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw background
-  ctx.fillStyle = '#70c5ce';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Draw bird and pipes
-  drawBird();
-  drawPipes();
-
-  // Draw score
-  ctx.fillStyle = 'black';
-  ctx.font = `${canvas.height / 20}px Arial`; // Scaled font size
-  ctx.fillText(`Score: ${score}`, 10, 30);
-
-  // Game Over text
-  if (gameOver) {
-    ctx.fillStyle = 'red';
-    ctx.font = `${canvas.height / 10}px Arial`; // Scaled font size
-    ctx.fillText('Game Over', canvas.width / 2 - canvas.width / 8, canvas.height / 2);
-    ctx.font = `${canvas.height / 25}px Arial`;
-    ctx.fillText('Press Enter to Restart', canvas.width / 2 - canvas.width / 6, canvas.height / 2 + 50);
-  }
-}
-
-// Game loop
-function loop() {
-  update();
-  draw();
-  if (!gameOver) requestAnimationFrame(loop);
-}
-
-// Start the game
-loop();
-</script>
 </body>
 </html>
